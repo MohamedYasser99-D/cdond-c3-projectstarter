@@ -358,6 +358,8 @@ jobs:
       - revert-migrations
 
       # Here's where you will add some code to rollback on failur
+
+      # Here's where you will add some code to rollback on failur
 #   cloudfront-update:
 #     docker:
 #       # Docker image here that supports AWS CLI
