@@ -318,7 +318,7 @@ jobs:
 
       - revert-migrations
 
-smoke-test:
+  smoke-test:
     docker:
       - image: amazon/aws-cli
     steps:
