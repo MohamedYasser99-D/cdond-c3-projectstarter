@@ -376,8 +376,8 @@ jobs:
             aws cloudformation list-exports \
               --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate \
-              --output text > OldFlow.txt
-            cat OldFlow.txt
+              --output text > flowHistory.txt
+            cat flowHistory.txt
       - run:
           name: Update cloudfront distribution
           command: |
@@ -389,7 +389,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - OldFlow.txt
+            - flowHistory.txt
       - destroy-environment:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
 
@@ -414,8 +414,8 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
-            cat ~/workspace/lastFlow.txt
-            export OldWorkflowID=$(cat ~/workspace/lastFlow.txt)
+            cat ~/workspace/flowHistory.txt
+            export OldWorkflowID=$(cat ~/workspace/flowHistory.txt)
             export CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
             if [[ "$CurrentWorkflowID" == "$OldWorkflowID" ]]
             then
