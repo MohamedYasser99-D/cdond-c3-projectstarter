@@ -465,8 +465,8 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
-            cat ~/workspace/lastFlow.txt
-            export OldWorkflowID=$(cat ~/workspace/lastFlow.txt)
+            cat ~/workspace/flowHistory.txt
+            export OldWorkflowID=$(cat ~/workspace/flowHistory.txt)
             export CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
             if [[ "$CurrentWorkflowID" == "$OldWorkflowID" ]]
             then
