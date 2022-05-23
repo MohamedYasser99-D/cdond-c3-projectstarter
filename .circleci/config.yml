@@ -375,6 +375,44 @@ jobs:
 
       # Here's where you will add some code to rollback on failure  
 
+  # cloudfront-update:
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Install dependencies
+  #         command: |
+  #           yum -y install tar gzip
+  #     - attach_workspace:
+  #         at: .
+  #     - run:
+  #         name: Retrieve old stack workflow ID
+  #         command: |
+  #           aws cloudformation list-exports \
+  #             --query "Exports[?Name==\`workflowid\`].Value" \
+  #             --no-paginate \
+  #             --output text > lastFlow.txt
+  #           cat lastFlow.txt
+  #     - run:
+  #         name: Update cloudfront distribution
+  #         command: |
+  #           aws cloudformation deploy \
+  #           --template-file .circleci/files/cloudfront.yml \
+  #           --stack-name InitialStack \
+  #           --parameter-overrides workflowid="${CIRCLE_WORKFLOW_ID:0:7}" \
+  #           --tags project=udapeople
+  #           aws cloudfront create-invalidation \
+  #           --distribution-id E4LU8LODBLMCW \
+  #           --paths "/*"
+  #     - persist_to_workspace:
+  #         root: .
+  #         paths:
+  #           - lastFlow.txt
+  #     - destroy-environment:
+  #         Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
+
+  #     - revert-migrations
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
@@ -384,35 +422,30 @@ jobs:
           name: Install dependencies
           command: |
             yum -y install tar gzip
-      - attach_workspace:
-          at: .
       - run:
-          name: Retrieve old stack workflow ID
+          name: Retrieve previous stack workflow ID and save it.
           command: |
             aws cloudformation list-exports \
-              --query "Exports[?Name==\`workflowid\`].Value" \
+              --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate \
-              --output text > lastFlow.txt
-            cat lastFlow.txt
+              --output text > flowHistory.txt
+            cat flowHistory.txt
       - run:
           name: Update cloudfront distribution
           command: |
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name InitialStack \
-            --parameter-overrides workflowid="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
-            aws cloudfront create-invalidation \
-            --distribution-id E4LU8LODBLMCW \
-            --paths "/*"
       - persist_to_workspace:
           root: .
           paths:
-            - lastFlow.txt
+            - flowHistory.txt
       - destroy-environment:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
 
-      - revert-migrations
+      - revert-migrations  
 
 
       # Here's where you will add some code to rollback on failure  
