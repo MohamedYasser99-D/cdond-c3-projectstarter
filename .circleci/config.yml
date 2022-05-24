@@ -1,4 +1,3 @@
-
 version: 2.1
 
 commands:
@@ -11,6 +10,7 @@ commands:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
+
   install_ansible:
     description: Install Ansible
     steps:
@@ -20,7 +20,8 @@ commands:
             sudo apt update
             sudo apt install software-properties-common -y
             sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible -y
+            sudo apt install ansible -y      
+
   install_nodejs:
     description: Install Node.js 13
     steps:
@@ -29,6 +30,7 @@ commands:
           command: |
             curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
             sudo apt install -y nodejs    
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given stacks name.    
     parameters:
@@ -37,15 +39,24 @@ commands:
         default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
-          name: Destroy Infrastructure (S3-Backend-Fro)
+          name: Destroy backend infrastructure
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: Destroy S3 infrastructure
           when: on_fail
           command: |
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+           
+      - run:
+          name: Destroy frontend infrastructure
+          when: on_fail
+          command: |
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            
 
-            
-            
+
   revert-migrations:
     description: Revert  last migration
     parameters:
@@ -65,7 +76,7 @@ commands:
               npm install
               npm run migration:revert
             fi
-          
+            
 jobs:
   build-frontend:
     docker:
@@ -73,17 +84,16 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build]
+          keys: [frontend-deps]
       - run:
           name: Build front-end
           command: |
-            cd frontend
-            npm install
-            npm run build
-            
+           cd frontend
+           npm install
+           npm run build
       - save_cache:
           paths: [frontend/node_modules]
-          key: frontend-build
+          key: frontend-deps
 
   build-backend:
     docker:
@@ -91,30 +101,30 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-deps]
       - run:
           name: Back-end build
           command: |
-             cd backend
-             npm install
-             npm run build
+            cd backend
+            npm install
+            npm run build
       - save_cache:
           paths: [backend/node_modules]
-          key: backend-build
+          key: backend-deps
 
   test-frontend:
     docker:
-      - image: cimg/node:13.8.0
+     - image: cimg/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build]
+          keys: [frontend-deps]
       - run:
-          name: front-end Unit test
+          name: front-end unit test
           command: |
-             cd frontend
-             npm install
-             npm run test
+           cd frontend
+           npm install
+           npm test
                 
   test-backend:
     docker:
@@ -122,7 +132,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-deps]
       - run:
           name: Back-end build
           command: |
@@ -136,7 +146,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [frontend-build]
+          keys: [frontend-deps]
       - run:
           name: front-end scan
           command: |
@@ -150,14 +160,14 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: [backend-build]
+          keys: [backend-deps]
       - run:
           name: back-end scan
           command: |
              cd backend
              npm install
              npm audit fix --audit-level=critical --force
-            
+
   deploy-infrastructure:
     docker:
       - image: cimg/base:stable
@@ -194,10 +204,9 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-
       - destroy-environment:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
-            
+
   configure-infrastructure:
     docker:
       - image: cimg/base:stable
@@ -217,8 +226,7 @@ jobs:
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
-
-           
+            
   run-migrations:
     docker:
       - image: cimg/node:13.8.0
@@ -310,7 +318,6 @@ jobs:
 
       - revert-migrations
 
-
   smoke-test:
     docker:
       - image: amazon/aws-cli
@@ -350,7 +357,9 @@ jobs:
 
       - revert-migrations
 
-    
+      # Here's where you will add some code to rollback on failur
+
+      # Here's where you will add some code to rollback on failur
 
   cloudfront-update:
     docker:
@@ -361,15 +370,14 @@ jobs:
           name: Install dependencies
           command: |
             yum -y install tar gzip
-
       - run:
           name: Retrieve previous stack workflow ID and save it.
           command: |
             aws cloudformation list-exports \
               --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate \
-              --output text > FlowHis.txt
-            cat FlowHis.txt
+              --output text > flowHistory.txt
+            cat flowHistory.txt
       - run:
           name: Update cloudfront distribution
           command: |
@@ -378,43 +386,47 @@ jobs:
             --stack-name InitialStack \
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
-
       - persist_to_workspace:
           root: .
           paths:
-            - FlowHis.txt
+            - flowHistory.txt
       - destroy-environment:
           Workflow_ID: "${CIRCLE_WORKFLOW_ID:0:7}"
 
       - revert-migrations  
 
 
+      # Here's where you will add some code to rollback on failure  
+#       # Here's where you will add some code to rollback on failure  
+
   cleanup:
-      docker:
-        - image: amazon/aws-cli
-      steps:
-        - checkout
-        - run:
-            name: Install dependencies
-            command: |
-              yum -y install tar gzip 
-        - attach_workspace:
-            at: ~/workspace/
-        - run:
-            name: Remove previos stacks and files
-            command: |
-              cat ~/workspace/FlowHis.txt
-              export OldWorkflowID=$(cat ~/workspace/FlowHis.txt)
-              export CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
-              if [[ "$CurrentWorkflowID" == "$OldWorkflowID" ]]
-              then
-                echo "It's OK, No Previous Stack"
-              else
-                echo "will delete old version"
-                aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
-                aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
-                aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
-              fi
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y gcc-c++ make 
+            yum -y install tar gzip jq
+      - attach_workspace:
+          at: ~/workspace/
+      - run:
+          name: Remove old stacks and files
+          command: |
+            cat ~/workspace/flowHistory.txt
+            export OldWorkflowID=$(cat ~/workspace/flowHistory.txt)
+            export CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
+            if [[ "$CurrentWorkflowID" == "$OldWorkflowID" ]]
+            then
+              echo "No Old stack to be deleted"
+            else
+              echo "will delete old version"
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+            fi
+            
 
 workflows:
   default:
