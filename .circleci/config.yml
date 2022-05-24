@@ -375,7 +375,7 @@ jobs:
           name: Retrieve previous stack workflow ID and save it.
           command: |
             aws cloudformation list-exports \
-              --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --query "Exports[?Name==\`workflowid\`].Value" \
               --no-paginate \
               --output text > flowHistory.txt
             cat flowHistory.txt
@@ -385,7 +385,7 @@ jobs:
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name InitialStack \
-            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides workflowid="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
       - persist_to_workspace:
           root: .
