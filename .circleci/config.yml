@@ -1,3 +1,4 @@
+   
 version: 2.1
 
 commands:
@@ -10,7 +11,6 @@ commands:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
-
   install_ansible:
     description: Install Ansible
     steps:
@@ -21,7 +21,6 @@ commands:
             sudo apt install software-properties-common -y
             sudo add-apt-repository --yes --update ppa:ansible/ansible
             sudo apt install ansible -y      
-
   install_nodejs:
     description: Install Node.js 13
     steps:
@@ -30,7 +29,6 @@ commands:
           command: |
             curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
             sudo apt install -y nodejs    
-
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given stacks name.    
     parameters:
@@ -55,8 +53,6 @@ commands:
           command: |
             aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
             
-
-
   revert-migrations:
     description: Revert  last migration
     parameters:
@@ -167,7 +163,6 @@ jobs:
              cd backend
              npm install
              npm audit fix --audit-level=critical --force
-
   deploy-infrastructure:
     docker:
       - image: cimg/base:stable
@@ -258,7 +253,6 @@ jobs:
       - checkout
       - install_awscli
       - install_nodejs
-      - install_ansible
       - restore_cache:
           keys: [frontend-deps]
       - run:
@@ -375,7 +369,7 @@ jobs:
           name: Retrieve previous stack workflow ID and save it.
           command: |
             aws cloudformation list-exports \
-              --query "Exports[?Name==\`workflowid\`].Value" \
+              --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate \
               --output text > flowHistory.txt
             cat flowHistory.txt
@@ -385,7 +379,7 @@ jobs:
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name InitialStack \
-            --parameter-overrides workflowid="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
       - persist_to_workspace:
           root: .
@@ -428,7 +422,6 @@ jobs:
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
             fi
             
-
 workflows:
   default:
     jobs:
@@ -459,5 +452,6 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
-      - cleanup:
-          requires: [cloudfront-update]
+      # - cleanup:
+      #     requires: [cloudfront-update]
+
