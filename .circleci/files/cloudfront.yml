@@ -1,5 +1,5 @@
 Description: >
-  Cloudfront distribution for udapeople.
+  Cloudfront distribution for UdaPeople.
 
 Parameters:
   WorkflowID:
@@ -33,7 +33,7 @@ Resources:
           ViewerProtocolPolicy: allow-all
 
 Outputs:
-  workflowid:
+  WorkflowID:
     Value: !Sub ${WorkflowID}
     Description: URL for website hosted on S3
     Export:
