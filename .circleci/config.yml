@@ -373,8 +373,6 @@ jobs:
 
       - revert-migrations
 
-      # Here's where you will add some code to rollback on failure  
-
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
@@ -387,7 +385,7 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Retrieve old stack workflow ID
+          name: Retrieve stack workflow id
           command: |
             aws cloudformation list-exports \
               --query "Exports[?Name==\`workflowid\`].Value" \
