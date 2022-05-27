@@ -41,6 +41,7 @@ async function bootstrap() {
       if (isOriginAllowed || allowAccessAnyway) {
         callback(null, true);
       } else {
+        console.log('sss');
         callback(new Error('Not allowed by CORS'));
       }
     },
